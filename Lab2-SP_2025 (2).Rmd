@@ -1,0 +1,199 @@
+---
+title: "MA334-SP: Lab 2"
+output:
+  pdf_document: default
+  html_notebook: default
+  html_document:
+    df_print: paged
+---
+
+### In this Lab, you will learn:
+
+- how to compute measures of location and spread e.g mean and variance
+- how to produce: boxplots, histograms, bar plots, cumulative frequency diagrams
+
+### Required packages:
+
+- MASS (install.packages("MASS")) 
+
+```{r}
+#install.packages("MASS") # Comment out once this has been installed
+library(MASS)
+```
+
+---
+
+```{r}
+# Clear the environment
+if(!is.null(dev.list())) dev.off()
+rm(list = ls())
+cat("\014")
+```
+
+### Section 2.1: Measures of location
+
+```{r}
+# Load the data
+xvec <- c(4:17) # x values
+frevec<-c(3,5,5,5,6,8,9,3,1,1,2,1,0,1) # frequency vector (how many of each x)
+```
+
+
+```{r}
+# Estimate mode (Example 2.1)
+loc<-which(frevec == max(frevec,na.rm=TRUE)) # na.rm: whether to remove missing values
+# Alternatively, try: which.max(frevec). What does this give?
+modeelement<-xvec[loc]
+print(paste("Mode is:",toString(modeelement)))
+```
+
+```{r}
+# Estimate the mean
+totalsum=frevec%*%xvec #inner product of two vectors
+n=sum(frevec) # number of observations
+meanval<-totalsum/n
+print(paste("Mean value is",meanval))
+```
+```{r}
+# Alternatively, find totalsum using a loop:
+totalsum=0
+for(i in 1:length(xvec)){
+  totalsum <- totalsum + xvec[i]*frevec[i]
+}
+n=sum(frevec) # number of observations
+meanval<-totalsum/n
+print(paste("Mean value using a loop is",meanval))
+```
+
+
+```{r}
+# Estimate 20% trimmed mean (Example 2.2)
+wordcounts<-c(118,39,27,13,49,35,51,29,68,54,58,42,16,221,80,25,41,33)
+meanval<-mean(wordcounts)
+trimmedmeanval<-mean(wordcounts, trim=0.1) # 20% trimmed (remove bottom 10% and top 10%)
+print(paste("Mean value is",meanval))
+print(paste("Trimmed mean value is",signif(trimmedmeanval,3))) # Quote answer to 3 s.f.
+```
+```{r}
+## Check what trim=0.1 did: 
+sorted_wordcounts<-sort(wordcounts, decreasing = FALSE) # sort in ascending order using sort()
+remove_words<-floor(0.1*length(wordcounts)) # how many words to remove from top and bottom; use floor()
+L<-length(wordcounts)
+trimmedmeanval<-mean(sorted_wordcounts[(remove_words+1):(L-remove_words)])
+print(paste("Trimmed mean value is",trimmedmeanval))
+# trim=0.1 removed the bottom and top values after sorting the data (10% is 1.8 so takes the integer)
+## Try, e.g. 40% trimmed (trim=0.2)
+```
+
+
+```{r}
+# The Winsorized mean (Example 2.2)
+numchange<-floor(0.1*length(wordcounts)) #number of ignored elements from the bottom or top
+print(sorted_wordcounts)
+wins_wordcounts<-sorted_wordcounts
+if (numchange>=1) {
+for (t in 1:numchange){wins_wordcounts[t]<-sorted_wordcounts[numchange+1]}
+for (t in seq(L-numchange+1,L,by=1)) {wins_wordcounts[t]<- sorted_wordcounts[L-numchange]}
+}
+print(wins_wordcounts)
+winsorizedmeanval<-mean(wins_wordcounts)
+print(paste("Winsorized mean value is",signif(winsorizedmeanval,4)))
+```
+
+```{r}
+# Estimate median
+print(sorted_wordcounts)
+medianval=median(sorted_wordcounts)
+print(paste("Median is",medianval))
+```
+
+### Section 2.2 Measures of spread
+
+```{r}
+# Load Data (Example 2.2)
+data<-c(13,16,25,27,29,33,35,39,41,42,49,51,54,58,68,80,118,221)
+# range of data 
+rangeval<-range(data)
+print(paste("The range of sentence lengths is from",rangeval[1], "to", rangeval[2]))
+```
+```{r}
+# Estimate lower and upper quartiles
+quartileeval<-quantile(data, probs = c(0.25,0.75), na.rm = FALSE,
+ names = TRUE, type = 1) # type=1 agrees with simple method for finding quartiles
+print(paste("The lower quartile is",quartileeval[1],"and the upper quartile is",quartileeval[2]))
+```
+
+### Section 2.3 Boxplots
+
+```{r}
+# Plotting a boxplot
+# Load the data
+dickensdata<-c(118,39,27,13,49,35,51,29,68,54,58,42,16,221,80,25,41,33) #dickens dataset
+archerdata<-c(8,10,15,13,32,25,14,16,32,25,5,34,36,19,20,37,19) # archer dataset
+par(mfrow = c(1,2)) # c(1,2) is 1 row, 2 columns for the plots. Play with this. 
+boxplot(dickensdata,archerdata,range=1.5, xlab="Dickens Archer", ylab="Sentence length")
+# Note that the whiskers extend to "range" times the interquartile range  
+boxplot(dickensdata,archerdata,log='y',range=1.5,xlab="Dickens Archer",ylab="Sentence length") 
+# Comment on/interpret the plots
+```
+
+### Section 2.4 Histograms
+
+```{r}
+# Load the data (Example 2.3)
+erratics<-c(216, 420, 240, 100, 247, 128, 540, 594, 160, 286, 216, 448, 380, 509, 90,156, 135, 225,
+304, 144, 152, 143, 135, 266, 286, 154, 154, 386, 378, 160)
+par(mfrow = c(1,1))
+hist(erratics,breaks=c(0,100,200,300,400,500,600),xlab="Area of erratic (cm squared)") 
+# defaults to frequency if class widths are equal
+hist(erratics,breaks=c(0,125,150,200,250,400,600),xlab="Area of erratic (cm squared)") 
+# defaults to density if class widths are not equidistant
+# The below is WRONG for unequal widths (should be freq=FALSE):
+hist(erratics,breaks=c(0,125,150,200,250,400,600),xlab="Area of erratic (cm squared)",freq=TRUE) 
+```
+
+### Bar plots
+
+```{r}
+data("Cars93") # Load the data (this requires the MASS package)
+?Cars93 # Read about the data set
+head(Cars93) # Print out the first few rows of the dataframe
+names(Cars93) # Get the variable names
+unique(Cars93$Type) # Find how many different car types there are in the data set
+str(Cars93$Type) # Find the variable data type ("Factor" is qualitative/categorical)
+counts <- table(Cars93$Type) # Get the number of cars of each size
+barplot(counts,xlab="Car size",ylab="Frequency") # Plot the bar chart
+```
+
+
+
+### Section 2.5 Cumulative frequency diagrams
+
+```{r}
+# Cumulative frequency plot
+# Load data (Example 2.4)
+cumulative_freq<-c(2,4,8,11,16,23,28,30,32,32,34,34,36)
+break_points<-c(seq(100,1000,100),seq(1500,2500,500)) # vector with steps 
+# of 100 between 100 and 1000, 
+# and steps of 500 between 1500 and 2500 (upper values in class intervals)
+plot(break_points,cumulative_freq,xlab="Distance travelled (miles)",ylab="Cumulative frequecy",
+type="l")
+```
+
+
+### Section 2.7 Variance and standard deviation
+
+```{r}
+# Find the standard deviation of the Dickens and Archer data 
+archerdata<-c(8,10,15,13,32,25,14,16,32,25,5,34,36,19,20,37,19)
+dickensdata<-c(118,39,27,13,49,35,51,29,68,54,58,42,16,221,80,25,41,33) #dickens dataset
+archersdval<-sd(archerdata)
+dickensdval<-sd(dickensdata)
+print(paste("Standard deviation for the Archer data is",archersdval,"words."))
+print(paste("Standard deviation for the Dickens data is",dickensdval,"words."))
+
+# Now calculate the variance and standard deviation 
+# of the Dickens and Archer data using the formulae given in the lectures. 
+# Check that you get the same answers as above.
+```
+
